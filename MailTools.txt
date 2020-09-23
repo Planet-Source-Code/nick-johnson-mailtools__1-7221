@@ -1,0 +1,211 @@
+MailTools 1.1b documentation.
+
+MailTools is Copyright Nick Johnson, 2000. MailTools may be distributed
+free of charge so long as all files are included unmodified. Mailtools
+or components of it may be used in any programming project, free or pay
+software, on the condition that if it is to be publicly distributed,
+the author, Nick Johnson is offered a free copy of it.
+
+The author can be contacted at: arachnid@mad.scientist.com
+
+File Listing:
+	SmtpClient.cls	- The SMTP module, for sending mail
+	PopClient.cls	- The POP module, for recieving mail
+	Message.cls	- The Message class, used by both classes to
+			  store, retrieve and send messages
+	MailTool.txt	- This file.
+
+
+Planned updates:
+1)	A mail rule processor. Will take a collection of rules and a
+	message as paramaters, and return the actions that should be
+	performed. The carrying out of these actions is left up to the
+	programme.
+
+Introduction:
+MailTools was originally written (and is still being written) as a
+solution for easy communication with POP and SMTP servers. When I went
+to write a programme that needed to communicate with both of these, I
+was unable to find any code that made communication with these servers
+easier while still leaving versatility to the user. MailTools does this
+by using commands basically similar to the ones transmitted to the
+servers, but gets and parses the resulting responses into VB structures
+
+MailTools throws 'hard' errors. This means that if an error occurs with
+the Mail server or the Winsock connection, it is up to the author of 
+the software that uses MailTools to deal with it, and trap the thrown
+error(s). I reccommend using On Error Resume Next, as none of the
+errors returned are fatal, and can be dealt with after each command.
+Sometimes, due to the sheer number of commands executed, error handling
+at the end of the routine may be more efficient.
+
+Both SmtpClient and PopClient require winsock objects to be passed to
+them. This is to allow communication with the server, and they must
+be passed before any properties can be set, or any methods executed.
+If anyone knows of a Winsock API class that also handles events and non
+blocking calls, please let me know.
+
+Any suggestions, criticisms, improvements, remarks or anything else
+should be sent to the author without delay. I appreciate them!
+
+
+PopClient documentation:
+To use PopClient:
+	Create a PopClient object, and instantiate it.
+	Set the wsConnection property to a Winsock object
+	Set the ServerName and ServerPort properties
+	Call the Connect method
+	Call the User and Pass methods with the appropriate paramaters.
+	-From here on in, do whatever is neccessary for your programme.
+	Call the Quit method to disconnect. Be polite :)
+
+Methods:
+Connect
+	Connects to the POP server specified in ServerName, on port
+	ServerPort, with the Winsock object wsConnection.
+
+User(strUser as String)
+	Sends the user strUser to the POP server
+
+Pass(strPass as String)
+	Sends the password to the POP server.
+
+Stat as Long()
+	Returns a 2 element array of type Long. Element 1 contains the
+	number of messages waiting on the server. Element 3 contains
+	the total size of the messages.
+
+List as Collection
+	Returns a collection of 2 element arrays of type Long. Element
+	1 of each entry contains the message number, Element 2 contains
+	the size of the message.
+
+Top(intMessage as Integer, intLines as Integer) as Message
+	Returns the header of message intMessage, followed by a blank
+	line, followed by the first intLines lines of the message.
+	intLines must be 0 or greater.
+
+Retr(intMessage as Integer) as Message
+	Returns message no. intMessage, including all headers
+
+Dele(intMessage as Integer)
+	Marks the specified message for deletion
+
+Noop
+	Sends the server a NOOP to keep the connection alive
+
+Uidl(Optional intMessage as Integer) as Collection
+	Returns a collection of two element arrays of type String.
+	The first element of each array contains the string
+	representation of the message number, the second contains
+	a unique ID for that message. If intMessage is specified,
+	only 1 line, for that message, is returned.
+
+Reset
+	Unmarks all messages marked for deletion
+
+Quit
+	Disconnects from the server. All messages marked for deletion
+	are deleted.
+
+
+SmtpClient documentation:
+To use SmtpClient:
+	Create a SmtpClient object and instantiate it.
+	Set the wsConnection property to a Winsock object.
+	Set the ServerName and ServerPort properties.
+	Call the Connect Method.
+	Call the Helo method with the domain name of the computer
+	Call the Mail method with the from name
+	Call the Rcpt method with the name of each sender and when 
+		to send reciepts.
+	Call the Data method with the Message to send.
+	Repeat from Mail for each message
+	Call the Quit method
+
+Methods:
+Connect
+	Connects to the SMTP server specified in ServerName, on port
+	ServerPort, with the Winsock object wsConnection.
+
+Helo(strDomain as String)
+	Identifies your computer to the SMTP server
+
+Mail(strFrom as String)
+	Starts a new message from strFrom
+
+Rcpt(strTo as String, bOptions as Byte)
+	Specifies a recepient for the current message and when to
+	recieve delivery reciepts. Values for the bOptions variable
+	are stored in the public Enum Reciept.
+
+Data(msgMessage as Message)
+	Sends the message contained in msgMessage. Note that the
+	MessageTo, MessageCC, and MessageFrom fields are the ones that
+	the end user sees, but do not affect the actual source or 
+	destination of the message. The only fields of the message
+	object that are used in sending the message are MessageFrom,
+	MessageTo, MessageCC, Subject, ContentType,
+	and all the headers in XHeaders. All others are ignored.
+
+Noop
+	Sends a NOOP to the server to keep the connection alive.
+
+Reset
+	Resets the server, cancelling any message underway.
+
+Quit
+	Disconnects from the server and closes the connection.
+
+
+Message object documentation:
+	The message object acts as a common structure, used by both the
+	SmtpClient and PopClient classes, as well as the programmer to
+	send, recieve, and interpret messages. The PopClient class
+	creates a new Message class whenever it's Top or Retr methods
+	are called, and populates it with appropriate data. The
+	SmtpClient class accepts a message object as a parameter for
+	the Data method, and transmits it over SMTP.
+
+Properties:
+ContentType
+	Specifies the content type used for the body of this message
+
+MessageCC
+	Specifies CC: addresses to appear on the message, when read.
+
+MessageDate
+	If this message was recieved by the PopClient class, contains
+	the Date it was recieved by the POP server.
+	Ignored when sending messages.
+
+MessageFrom
+	Contains the from address to appear on the message, when read.
+
+MessageId
+	If this message was recieved by the PopClient class, contians
+	a unique ID no for this message.
+	Ignored when sending messages.
+
+MessageText
+	Contains the actual text of the message. MIME coming soon! :)
+
+MessageTo
+	Contains the to address to appear on the message, when read.
+
+ReturnPath
+	Contains the "Reply To" address.
+	Ignored when sending messages.
+
+Subject
+	Contains the subject of the message.
+
+XHeaders
+	A collection, containing a set of strings. Each item represents
+	an X-Whatever header on the message. (eg. X-MimeVersion:1.0)
+	Entries are keyed by the header name, and indexed in the order
+	they were found on the message, or added.
+
+
+
+Copyright 2000, Nick Johnson
